@@ -49,25 +49,30 @@ class currwarn(ww):
     """
     Gets current warnings. Impliments function overloading.
     If no fields are specified then it gets an array of all
-    possible to watch
+    possible tags.
+    If strfilt and strfilt are left empty then it returns all values
+    of a certain type of cap value
+    If strfilt, and condition are filled then an array of cap data filtered by
+    the given condition
     """
     def getCurrWarn(self,strdat='',strfilt='',condition=''):
         if strdat=='' and strfilt=='' and condition=='':
             ret=[]
+            #seperate tags based on entries
             entries=self.soup.find_all('entry')
             for i in entries:
-                #print(str(i))
+                
                 temp_soup=bs(str(i),'lxml')
                 temp=[]
                 for j in self.tags:
+                    #seperate cap values in an entry
                     events_xml=temp_soup.find('cap:'+j)
                     taglength = len(j)
                     events_str=self.xml2str_small(events_xml,taglength+6)
                     temp.append(events_str)
                 ret.append(temp)
             
-            #events_str=self.xml2str(events_xml,taglength+6)
-            #self.cap_dict[strdat]=events_str
+            
             return ret
         elif strfilt=='' and condition=='':
             events_xml=self.soup.find_all('cap:'+strdat)
@@ -91,14 +96,15 @@ class currwarn(ww):
                         ret.append(temp)
             return ret
             
-    #def getCurrWarn(self,strdat):
         
-    
-    #def getCurrWarn(self,strdat,strfilt,condition):
-        
-    
+    """
+    Returns all available tags
+    """
     def availabletags(self):
         return self.cap_tags
+    """
+    Use this to find current warning state given a specific area code
+    """
     def findwarn(x):
         page = urlopen('https://alerts.weather.gov/cap/wwaatmget.php?x='+x+'&amp')
         soup = bs(page,'lxml')
@@ -106,9 +112,9 @@ class currwarn(ww):
         warning = str(alert[1])[7:][:-8]
         return warning
     
-
-x = currwarn()
+#TEST CODE
+#x = currwarn()
 ##cap=x.getCurrWarn('event','urgency','Expected')
 ##
 ###cap = soup.find_all('cap:polygon')
-print(x.getCurrWarn('','severity','Moderate'))
+#print(x.getCurrWarn('','severity','Moderate'))
