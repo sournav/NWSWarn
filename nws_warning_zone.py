@@ -1,7 +1,20 @@
+"""
+MADE BY SOURNAV SEKHAR BHATTACHARYA
+"""
 from urllib.request import urlopen
 from bs4 import BeautifulSoup as bs
 from warn_wrap import warn_wrap as ww
+"""
+This class represents current warnings.
+You can instantiate it and use member functions to get
+current warnings, and more.
+Extends the warn_wrap abstract class
+"""
 class currwarn(ww):
+    """
+    Constructor for the currwarn class, opens NWS warning page,
+    and initializes all possible tags for the given weather warning site
+    """
     def __init__(self):
         self.url='https://alerts.weather.gov/cap/us.php?x=1?map=on'
         self.page=urlopen(self.url)
@@ -18,16 +31,28 @@ class currwarn(ww):
                          'areadesc',
                          'polygon',
                          'summary']
+    """
+    xml2str_small used to convert a given xml line (including the tag itself) to string
+    """
     def xml2str_small(self,string,tagsize):
         return str(string)[tagsize:][:(-1*tagsize-1)]
+    """
+    Does the same thing as xml2str_small but over multiple entries in an array of
+    items with the same tag
+    """
     def xml2str(self,arr,tagsize):
         arr_str=[]
         for i in arr:
             arr_str.append(str(i)[tagsize:][:(-1*tagsize-1)])
             #print(i)
         return arr_str
+    """
+    Gets current warnings. Impliments function overloading.
+    If no fields are specified then it gets an array of all
+    possible to watch
+    """
     def getCurrWarn(self,strdat='',strfilt='',condition=''):
-        if strdat=='':
+        if strdat=='' and strfilt=='' and condition=='':
             ret=[]
             entries=self.soup.find_all('entry')
             for i in entries:
@@ -51,20 +76,21 @@ class currwarn(ww):
             #self.cap_dict[strdat]=events_str
             return events_str
         else:
-            events_xml=self.soup.find_all('cap:'+strdat)
-            events_xml2=self.soup.find_all('cap:'+strfilt)
-            taglength = len(strdat)
-            taglength2 = len(strfilt)
-            events_str=self.xml2str(events_xml,taglength+6)
-            events_str2=self.xml2str(events_xml2,taglength2+6)
-            #self.cap_dict[strdat]=events_str
-            lent=len(events_str)
-            ret_arr=[]
-            for i in range(lent):
-                #print(events_str2[i],condition)
-                if events_str2[i]==condition:
-                    ret_arr.append(events_str[i])
-            return ret_arr
+            ret=[]
+            entries=self.soup.find_all('entry')
+            for i in entries:
+                #print(str(i))
+                temp_soup=bs(str(i),'lxml')
+                temp=[]
+                for j in self.tags:
+                    events_xml=temp_soup.find('cap:'+j)
+                    taglength = len(j)
+                    events_str=self.xml2str_small(events_xml,taglength+6)
+                    temp.append(events_str)
+                if condition in temp:
+                        ret.append(temp)
+            return ret
+            
     #def getCurrWarn(self,strdat):
         
     
@@ -81,8 +107,8 @@ class currwarn(ww):
         return warning
     
 
-##x = currwarn()
+x = currwarn()
 ##cap=x.getCurrWarn('event','urgency','Expected')
 ##
 ###cap = soup.find_all('cap:polygon')
-##print(x.getCurrWarn())
+print(x.getCurrWarn('','severity','Moderate'))
