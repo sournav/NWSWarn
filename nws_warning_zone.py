@@ -4,6 +4,7 @@ MADE BY SOURNAV SEKHAR BHATTACHARYA
 from urllib.request import urlopen
 from bs4 import BeautifulSoup as bs
 from warn_wrap import warn_wrap as ww
+
 """
 This class represents current warnings.
 You can instantiate it and use member functions to get
@@ -28,9 +29,11 @@ class currwarn(ww):
                          'urgency',
                          'severity',
                          'certainty',
-                         'areadesc',
+                         'areaDesc',
                          'polygon',
-                         'summary']
+                         'summary',
+                         'state',
+                         'fips']
     """
     xml2str_small used to convert a given xml line (including the tag itself) to string
     """
@@ -47,6 +50,24 @@ class currwarn(ww):
             #print(i)
         return arr_str
     """
+    Gets a 2 digit state postal code depending
+    on geocode provided in cap feed
+    """
+    def geo2state(self,xml_inp):
+        soup=bs(str(xml_inp),'lxml')
+        value=soup.find_all('value')[1]
+        value_str=self.xml2str_small(value,7)
+        return value_str[0:2]
+    """
+    Gets a 2 digit state postal code depending
+    on geocode provided in cap feed
+    """
+    def geo2fips(self,xml_inp):
+        soup=bs(str(xml_inp),'lxml')
+        value=soup.find_all('value')[0]
+        value_str=self.xml2str_small(value,7)
+        return value_str[1:6]
+    """
     Gets current warnings. Impliments function overloading.
     If no fields are specified then it gets an array of all
     possible tags.
@@ -58,40 +79,66 @@ class currwarn(ww):
     def getCurrWarn(self,strdat='',strfilt='',condition=''):
         if strdat=='' and strfilt=='' and condition=='':
             ret=[]
-            #seperate tags based on entries
+            
+            entries=self.soup.find_all('entry')
+            #FOR TESTING PURPOSES
+            ##print(entries)
+            #END TESTING
+            for i in entries:
+                
+                temp_soup=bs(str(i),'lxml')
+                temp=[]
+                for j in self.tags:
+                    if j not in ['state','fips']:
+                        #seperate cap values in an entry
+                        events_xml=temp_soup.find('cap:'+j.lower())
+                        taglength = len(j)
+                        events_str=self.xml2str_small(events_xml,taglength+6)
+                        temp.append(events_str)
+                    else:
+                        if j=='state':
+                            events_xml=temp_soup.find('cap:geocode')
+                            temp.append(self.geo2state(events_xml))
+                            continue
+                        if j=='fips':
+                            events_xml=temp_soup.find('cap:geocode')
+                            temp.append(self.geo2fips(events_xml))
+                            break
+                ret.append(temp)
+                
+            
+            
+            return ret
+        elif strfilt=='' and condition=='':
+            if j not in ['state','fips']:
+                events_xml=self.soup.find_all('cap:'+strdat)
+                taglength = len(strdat)
+                events_str=self.xml2str(events_xml,taglength+6)
+                
+                return events_str
+        else:
+            ret=[]
             entries=self.soup.find_all('entry')
             for i in entries:
                 
                 temp_soup=bs(str(i),'lxml')
                 temp=[]
                 for j in self.tags:
-                    #seperate cap values in an entry
-                    events_xml=temp_soup.find('cap:'+j)
-                    taglength = len(j)
-                    events_str=self.xml2str_small(events_xml,taglength+6)
-                    temp.append(events_str)
-                ret.append(temp)
-            
-            
-            return ret
-        elif strfilt=='' and condition=='':
-            events_xml=self.soup.find_all('cap:'+strdat)
-            taglength = len(strdat)
-            events_str=self.xml2str(events_xml,taglength+6)
-            #self.cap_dict[strdat]=events_str
-            return events_str
-        else:
-            ret=[]
-            entries=self.soup.find_all('entry')
-            for i in entries:
-                #print(str(i))
-                temp_soup=bs(str(i),'lxml')
-                temp=[]
-                for j in self.tags:
-                    events_xml=temp_soup.find('cap:'+j)
-                    taglength = len(j)
-                    events_str=self.xml2str_small(events_xml,taglength+6)
-                    temp.append(events_str)
+                    if j not in ['state','fips']:
+                        events_xml=temp_soup.find('cap:'+j.lower())
+                        taglength = len(j)
+                        events_str=self.xml2str_small(events_xml,taglength+6)
+                        temp.append(events_str)
+                    else:
+                        if j=='state':
+                            events_xml=temp_soup.find('cap:geocode')
+                            temp.append(self.geo2state(events_xml))
+                            continue
+                        if j=='fips':
+                            events_xml=temp_soup.find('cap:geocode')
+                            temp.append(self.geo2fips(events_xml))
+                            break
+                    
                 if condition in temp:
                         ret.append(temp)
             return ret
@@ -101,7 +148,7 @@ class currwarn(ww):
     Returns all available tags
     """
     def availabletags(self):
-        return self.cap_tags
+        return self.tags
     """
     Use this to find current warning state given a specific area code
     """
@@ -113,8 +160,14 @@ class currwarn(ww):
         return warning
     
 #TEST CODE
-#x = currwarn()
+x = currwarn()
 ##cap=x.getCurrWarn('event','urgency','Expected')
 ##
 ###cap = soup.find_all('cap:polygon')
-#print(x.getCurrWarn('','severity','Moderate'))
+#x.getCurrWarn()
+#print(x.getCurrWarn())
+#import time
+#start=time.time()
+#y=x.getCurrWarn()
+#end=time.time()
+#print(str(end-start))
