@@ -119,6 +119,7 @@ class currwarn(ww):
         else:
             ret=[]
             entries=self.soup.find_all('entry')
+            #print(entries)
             for i in entries:
                 
                 temp_soup=bs(str(i),'lxml')
@@ -160,8 +161,9 @@ class currwarn(ww):
         return warning
     
 #TEST CODE
-x = currwarn()
-##cap=x.getCurrWarn('event','urgency','Expected')
+#x = currwarn()
+#cap=x.getCurrWarn('','urgency','Immediate')
+#print(cap)
 ##
 ###cap = soup.find_all('cap:polygon')
 #x.getCurrWarn()
